@@ -245,7 +245,7 @@ int main() {
     // print ffmpeg command
     if (bmpEnabled) {
         int pixelsX = (int) (BMP_SCALE * field.sizeX), pixelsY = (int) (BMP_SCALE * field.sizeY);
-        printf("ffmpeg.exe -r 20 -f image2 -s %dx%d -i ./images/%s.bmp -vcodec libx264 -pix_fmt yuv420p ./out.mp4",
+        printf("ffmpeg.exe -r 20 -f image2 -s %dx%d -i ./images/%s.bmp -vcodec libx264 -pix_fmt yuv420p ./out.mp4\n",
                pixelsX, pixelsY, "%d");
     }
 
@@ -259,7 +259,10 @@ int main() {
         if (stdoutEnabled) {
             exit = queryIsYes("Do you want to stop?", FALSE);
         } else {
-            if (steps % 100 == 0) printf("Reached step %lu", steps);
+            if (steps % 100 == 0){
+                printf("Reached step %lu\n", steps);
+                fflush(stdout);
+            }
 
             exit = (maxSteps != 0) && (steps >= maxSteps);
         }
