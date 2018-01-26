@@ -4,26 +4,7 @@
 
 #include "qdbmp.h"
 #include "dynamicArray.h"
-
-// booleans
-#define TRUE 1
-#define FALSE 0
-
-// tile colors
-#define BLACK 1
-#define WHITE 0
-
-// ant orientations
-#define NORTH 0
-#define EAST 1
-#define SOUTH 2
-#define WEST 3
-
-// BMP
-#define PALLETTE_WHITE 255
-#define PALLETTE_BLACK 0
-#define PALLETTE_ANT 100
-#define BMP_SCALE 5
+#include "constants.h"
 
 typedef struct {
     int x, y, orientation;
@@ -31,12 +12,15 @@ typedef struct {
 
 Array2D field;
 Ant ant;
+
 int assEnabled = FALSE;
 int bmpEnabled = FALSE;
 int stdoutEnabled = FALSE;
+
 unsigned long maxSteps = 0;
 unsigned long steps = 0;
 
+//region in/output
 int drawFieldToBmp() {
     // get file name
     char fileName[60] = "";
@@ -44,7 +28,7 @@ int drawFieldToBmp() {
     //printf("Printing to file %s...\n", fileName);
 
     // create bitmap
-    BMP* bmp = BMP_Create(field.sizeX * BMP_SCALE, field.sizeY * BMP_SCALE, 8);
+    BMP *bmp = BMP_Create(field.sizeX * BMP_SCALE, field.sizeY * BMP_SCALE, 8);
     BMP_SetPaletteColor(bmp, PALLETTE_BLACK, 0, 0, 0);
     BMP_SetPaletteColor(bmp, PALLETTE_WHITE, 255, 255, 255);
     BMP_SetPaletteColor(bmp, PALLETTE_ANT, 255, 0, 0);
@@ -61,81 +45,12 @@ int drawFieldToBmp() {
         }
     }
 
-    BMP_CHECK_ERROR(stdout, -1);
-
     // write to file
     BMP_WriteFile(bmp, fileName);
     BMP_CHECK_ERROR(stdout, -1);
 
     // free resources
     BMP_Free(bmp);
-}
-
-void ass() {
-    if (ant.x == 0) { // left
-        if (ant.y == 0) { // top
-            ant.x++;
-            ant.y++;
-        } else if (ant.y == field.sizeY - 1) { // bottom
-            ant.x++;
-            ant.y--;
-        }
-    } else if (ant.x == field.sizeX - 1) { // right
-        if (ant.y == 0) { // top
-            ant.x--;
-            ant.y++;
-        } else if (ant.y == field.sizeY - 1) { // bottom
-            ant.x--;
-            ant.y--;
-        }
-    }
-}
-
-void changeOrientation() {
-    if (field.array[ant.x][ant.y] == WHITE) {
-        ant.orientation = (ant.orientation + 1) % 4;
-    } else {
-        ant.orientation = (ant.orientation - 1) % 4;
-        ant.orientation = (ant.orientation >= 0) ? ant.orientation : (4 + ant.orientation);
-    }
-
-}
-
-void moveAnt() {
-    switch (ant.orientation) {
-        case NORTH:
-            ant.y -= 1;
-            break;
-        case EAST:
-            ant.x += 1;
-            break;
-        case SOUTH:
-            ant.y += 1;
-            break;
-        case WEST:
-            ant.x -= 1;
-            break;
-
-        default:
-            printf("The ant entered the 3rd dimension o_O\n");
-    }
-}
-
-void keepInBounds() {
-    if (ant.x < 0) ant.x = 0;
-    if (ant.x >= field.sizeX) ant.x = (int) field.sizeX - 1;
-    if (ant.y < 0) ant.y = 0;
-    if (ant.y >= field.sizeY) ant.y = (int) field.sizeY - 1;
-}
-
-void langtonsAnt() {
-    changeOrientation();
-    field.array[ant.x][ant.y] = (field.array[ant.x][ant.y] == WHITE) ? BLACK : WHITE;
-    moveAnt();
-    if (assEnabled) ass();
-    keepInBounds();
-
-    steps++;
 }
 
 void printAnt() {
@@ -202,8 +117,78 @@ int queryIsYes(char *msg, int defaultValue) {
         return ((input == 'y') || (input == 'Y'));
     }
 }
+//endregion
 
-int main() {
+//region Ant stuff
+void ass() {
+    if (ant.x < 0) { // left
+        if (ant.y < 0) { // top
+            ant.x++;
+            ant.y++;
+        } else if (ant.y > field.sizeY - 1) { // bottom
+            ant.x++;
+            ant.y--;
+        }
+    } else if (ant.x > field.sizeX - 1) { // right
+        if (ant.y < 0) { // top
+            ant.x--;
+            ant.y++;
+        } else if (ant.y > field.sizeY - 1) { // bottom
+            ant.x--;
+            ant.y--;
+        }
+    }
+}
+
+void changeOrientation() {
+    if (field.array[ant.x][ant.y] == WHITE) {
+        ant.orientation = (ant.orientation + 1) % 4;
+    } else {
+        ant.orientation = (ant.orientation - 1) % 4;
+        ant.orientation = (ant.orientation >= 0) ? ant.orientation : (4 + ant.orientation);
+    }
+
+}
+
+void moveAnt() {
+    switch (ant.orientation) {
+        case NORTH:
+            ant.y -= 1;
+            break;
+        case EAST:
+            ant.x += 1;
+            break;
+        case SOUTH:
+            ant.y += 1;
+            break;
+        case WEST:
+            ant.x -= 1;
+            break;
+
+        default:
+            printf("The ant entered the 3rd dimension o_O\n");
+    }
+}
+
+void keepInBounds() {
+    if (ant.x < 0) ant.x = 0;
+    if (ant.x >= field.sizeX) ant.x = (int) field.sizeX - 1;
+    if (ant.y < 0) ant.y = 0;
+    if (ant.y >= field.sizeY) ant.y = (int) field.sizeY - 1;
+}
+
+void langtonsAnt() {
+    changeOrientation();
+    field.array[ant.x][ant.y] = (field.array[ant.x][ant.y] == WHITE) ? BLACK : WHITE;
+    moveAnt();
+    if (assEnabled) ass();
+    keepInBounds();
+
+    steps++;
+}
+//endregion
+
+void setGlobalVars() {
     // Input field
     int x = 0, y = 0;
     while (x < 1 || y < 1) {
@@ -224,7 +209,7 @@ int main() {
         scanf("%d", &y);
     }
 
-    ant = (Ant){
+    ant = (Ant) {
             .x = x,
             .y = y,
             .orientation = NORTH
@@ -234,6 +219,10 @@ int main() {
     assEnabled = queryIsYes("Do not want to enable ASS (Anti Stuck System)?", TRUE);
     bmpEnabled = queryIsYes("Do you want to create an image for every step in ./images/?", TRUE);
     stdoutEnabled = queryIsYes("Do you want to print to console?", FALSE);
+}
+
+int main() {
+    setGlobalVars();
 
     // if no output -> how many generations?
     if (!stdoutEnabled) {
@@ -259,7 +248,7 @@ int main() {
         if (stdoutEnabled) {
             exit = queryIsYes("Do you want to stop?", FALSE);
         } else {
-            if (steps % 100 == 0){
+            if (steps % 100 == 0) {
                 printf("Reached step %lu\n", steps);
                 fflush(stdout);
             }
