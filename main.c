@@ -34,13 +34,14 @@ Ant ant;
 int assEnabled = FALSE;
 int bmpEnabled = FALSE;
 int stdoutEnabled = FALSE;
+unsigned long maxSteps = 0;
 unsigned long steps = 0;
 
 int drawFieldToBmp() {
     // get file name
     char fileName[60] = "";
     snprintf(fileName, sizeof fileName, "./images/%lu.bmp", steps);
-    printf("Printing to file %s...\n", fileName);
+    //printf("Printing to file %s...\n", fileName);
 
     // create bitmap
     BMP *bmp = BMP_Create(field.sizeX * BMP_SCALE, field.sizeY * BMP_SCALE, 8);
@@ -188,8 +189,6 @@ void printField() {
 }
 
 int main() {
-    system("ls");
-
     // Feld initialisieren
     int x = 0, y = 0;
     while (x < 1 || y < 1) {
@@ -228,7 +227,21 @@ int main() {
     scanf(" %c", &input);
     stdoutEnabled = (input != 'n') && (input != 'N');
 
-    
+    // if no output -> how many generations?
+    if (!stdoutEnabled) {
+        printf("How many steps do you want to do? (0=infinite): ");
+        fflush(stdin);
+        scanf("%lu", &maxSteps);
+    }
+
+    // print ffmpeg command
+    if (bmpEnabled) {
+        int pixelsX = (int) (BMP_SCALE * field.sizeX), pixelsY = (int) (BMP_SCALE * field.sizeY);
+        printf("ffmpeg.exe -r 20 -f image2 -s %dx%d -i ./images/%s.bmp -vcodec libx264 -pix_fmt yuv420p ./out.mp4",
+               pixelsX, pixelsY, "%d");
+    }
+
+    printf("Generating %lu steps", maxSteps);
 
     Ant a = {
             .x = x,
@@ -240,16 +253,21 @@ int main() {
     printf("Starting loop...\n");
     int exit = FALSE;
     while (!exit) {
-        //system("clear");
         if (stdoutEnabled) printField();
         if (bmpEnabled) drawFieldToBmp();
 
-        printf("Press enter to generate the next generation or type e to exit...");
-        fflush(stdin);
-        char input = getchar();
-        printf("\n");
-        if (input == 'e') {
-            exit = TRUE;
+        if (stdoutEnabled) {
+            printf("Press enter to generate the next generation or type e to exit...");
+            fflush(stdin);
+            char input = getchar();
+            printf("\n");
+            if (input == 'e') {
+                exit = TRUE;
+            }
+        } else {
+            if (steps % 100) printf("Reached step %lu", steps);
+
+            exit = (maxSteps != 0) && (steps >= maxSteps);
         }
 
         langtonsAnt();
