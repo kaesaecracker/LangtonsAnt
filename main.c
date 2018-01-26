@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#include "qdbmp.h"
 #include "dynamicArray.h"
 
 // booleans
@@ -16,6 +19,12 @@
 #define SOUTH 2
 #define WEST 3
 
+// BMP
+#define PALLETTE_WHITE 255
+#define PALLETTE_BLACK 0
+#define PALLETTE_ANT 100
+#define BMP_SCALE 5
+
 typedef struct {
     int x, y, orientation;
 } Ant;
@@ -23,7 +32,48 @@ typedef struct {
 Array2D field;
 Ant ant;
 int assEnabled = FALSE;
+int bmpEnabled = FALSE;
+int stdoutEnabled = FALSE;
 unsigned long steps = 0;
+
+int drawFieldToBmp() {
+    // get file name
+    char fileName[60] = "";
+    snprintf(fileName, sizeof fileName, "./images/%lu.bmp", steps);
+    printf("Printing to file %s...\n", fileName);
+
+    // create bitmap
+    BMP *bmp = BMP_Create(field.sizeX * BMP_SCALE, field.sizeY * BMP_SCALE, 8);
+    BMP_SetPaletteColor(bmp, PALLETTE_BLACK, 0, 0, 0);
+    BMP_SetPaletteColor(bmp, PALLETTE_WHITE, 255, 255, 255);
+    BMP_SetPaletteColor(bmp, PALLETTE_ANT, 255, 0, 0);
+
+    // set values of bitmap
+    for (unsigned int y = 0; y < (unsigned int) field.sizeY; y++) {
+        for (unsigned int x = 0; x < (unsigned int) field.sizeX; x++) {
+            for (unsigned int subpixel_x = 0; subpixel_x < BMP_SCALE; subpixel_x++) {
+                for (unsigned int subpixel_y = 0; subpixel_y < BMP_SCALE; subpixel_y++) {
+                    BMP_SetPixelIndex(bmp, x * BMP_SCALE + subpixel_x, y * BMP_SCALE + subpixel_y,
+                                      (unsigned char) (field.array[x][y] == BLACK ? PALLETTE_BLACK : PALLETTE_WHITE));
+                }
+            }
+
+
+
+
+            // printf("Error writing to BMP: %s", BMP_GetErrorDescription());
+
+            BMP_CHECK_ERROR(stdout, -1);
+        }
+    }
+
+    // write to file
+    BMP_WriteFile(bmp, fileName);
+
+    // free resources
+    ///free(fileName);
+    ///BMP_Free(bmp);
+}
 
 void ass() {
     if (ant.x == 0) { // left
@@ -115,6 +165,7 @@ void printAnt() {
 
 void printField() {
     printf("Step %lu: X=%d Y=%d", steps, ant.x, ant.y);
+    if (bmpEnabled) printf("; BMP print enabled");
     if (assEnabled) printf("; ASS enabled");
     printf("; Field: \n");
 
@@ -137,6 +188,8 @@ void printField() {
 }
 
 int main() {
+    system("ls");
+
     // Feld initialisieren
     int x = 0, y = 0;
     while (x < 1 || y < 1) {
@@ -163,6 +216,20 @@ int main() {
     scanf(" %c", &input);
     assEnabled = (input != 'n') && (input != 'N');
 
+    // draw to bitmaps
+    printf("Do you want to create an image for every step in ./images/? (y/N): ");
+    fflush(stdin);
+    scanf(" %c", &input);
+    bmpEnabled = (input == 'y') || (input == 'Y');
+
+    // print to stdout
+    printf("Do you want to print to console? (Y/n): ");
+    fflush(stdin);
+    scanf(" %c", &input);
+    stdoutEnabled = (input != 'n') && (input != 'N');
+
+    
+
     Ant a = {
             .x = x,
             .y = y,
@@ -173,8 +240,9 @@ int main() {
     printf("Starting loop...\n");
     int exit = FALSE;
     while (!exit) {
-        system("clear");
-        printField();
+        //system("clear");
+        if (stdoutEnabled) printField();
+        if (bmpEnabled) drawFieldToBmp();
 
         printf("Press enter to generate the next generation or type e to exit...");
         fflush(stdin);
