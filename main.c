@@ -44,7 +44,7 @@ int drawFieldToBmp() {
     //printf("Printing to file %s...\n", fileName);
 
     // create bitmap
-    BMP *bmp = BMP_Create(field.sizeX * BMP_SCALE, field.sizeY * BMP_SCALE, 8);
+    BMP* bmp = BMP_Create(field.sizeX * BMP_SCALE, field.sizeY * BMP_SCALE, 8);
     BMP_SetPaletteColor(bmp, PALLETTE_BLACK, 0, 0, 0);
     BMP_SetPaletteColor(bmp, PALLETTE_WHITE, 255, 255, 255);
     BMP_SetPaletteColor(bmp, PALLETTE_ANT, 255, 0, 0);
@@ -58,22 +58,17 @@ int drawFieldToBmp() {
                                       (unsigned char) (field.array[x][y] == BLACK ? PALLETTE_BLACK : PALLETTE_WHITE));
                 }
             }
-
-
-
-
-            // printf("Error writing to BMP: %s", BMP_GetErrorDescription());
-
-            BMP_CHECK_ERROR(stdout, -1);
         }
     }
 
+    BMP_CHECK_ERROR(stdout, -1);
+
     // write to file
     BMP_WriteFile(bmp, fileName);
+    BMP_CHECK_ERROR(stdout, -1);
 
     // free resources
-    ///free(fileName);
-    ///BMP_Free(bmp);
+    BMP_Free(bmp);
 }
 
 void ass() {
