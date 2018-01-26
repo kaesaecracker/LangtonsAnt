@@ -88,6 +88,8 @@ void langtonsAnt() {
     moveAnt();
     if (assEnabled) ass();
     keepInBounds();
+
+    steps++;
 }
 
 void printAnt() {
