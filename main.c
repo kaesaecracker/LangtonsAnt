@@ -188,18 +188,39 @@ void printField() {
     }
 }
 
+int queryIsYes(char *msg, int defaultValue) {
+    printf("%s", msg);
+    if (defaultValue == TRUE) {
+        printf(" (Y/n) : ");
+    } else {
+        printf(" (y/N) : ");
+    }
+
+    char input;
+    fflush(stdin);
+    scanf(" %c", &input);
+    printf("\n");
+
+    if (defaultValue == TRUE) {
+        return ((input != 'n') && (input != 'N'));
+    } else {
+        return ((input == 'y') || (input == 'Y'));
+    }
+}
+
 int main() {
-    // Feld initialisieren
+    // Input field
     int x = 0, y = 0;
     while (x < 1 || y < 1) {
         printf("Groesse des Feldes in X-Richtung: ");
         scanf("%d", &x);
         printf("Groesse des Feldes in Y-Richtung: ");
         scanf("%d", &y);
-        array2dInit(&field, x, y);
     }
 
-    // Ameise setzen
+    array2dInit(&field, x, y);
+
+    // input ant
     x = -1, y = -1;
     while (x < 0 || y < 0 || x > field.sizeX || y > field.sizeY) {
         printf("X-Position der Ameise: ");
@@ -208,24 +229,16 @@ int main() {
         scanf("%d", &y);
     }
 
-    // ASS
-    printf("Do not want to enable ASS (Anti Stuck System)? (Y/n): ");
-    char input;
-    fflush(stdin);
-    scanf(" %c", &input);
-    assEnabled = (input != 'n') && (input != 'N');
+    ant = (Ant){
+            .x = x,
+            .y = y,
+            .orientation = NORTH
+    };
 
-    // draw to bitmaps
-    printf("Do you want to create an image for every step in ./images/? (y/N): ");
-    fflush(stdin);
-    scanf(" %c", &input);
-    bmpEnabled = (input == 'y') || (input == 'Y');
-
-    // print to stdout
-    printf("Do you want to print to console? (Y/n): ");
-    fflush(stdin);
-    scanf(" %c", &input);
-    stdoutEnabled = (input != 'n') && (input != 'N');
+    // settings
+    assEnabled = queryIsYes("Do not want to enable ASS (Anti Stuck System)?", TRUE);
+    bmpEnabled = queryIsYes("Do you want to create an image for every step in ./images/?", TRUE);
+    stdoutEnabled = queryIsYes("Do you want to print to console?", FALSE);
 
     // if no output -> how many generations?
     if (!stdoutEnabled) {
@@ -241,31 +254,17 @@ int main() {
                pixelsX, pixelsY, "%d");
     }
 
-    printf("Generating %lu steps", maxSteps);
 
-    Ant a = {
-            .x = x,
-            .y = y,
-            .orientation = NORTH
-    };
-    ant = a;
-
-    printf("Starting loop...\n");
     int exit = FALSE;
+    printf("Starting loop...\n");
     while (!exit) {
         if (stdoutEnabled) printField();
         if (bmpEnabled) drawFieldToBmp();
 
         if (stdoutEnabled) {
-            printf("Press enter to generate the next generation or type e to exit...");
-            fflush(stdin);
-            char input = getchar();
-            printf("\n");
-            if (input == 'e') {
-                exit = TRUE;
-            }
+            exit = queryIsYes("Do you want to stop?", FALSE);
         } else {
-            if (steps % 100) printf("Reached step %lu", steps);
+            if (steps % 100 == 0) printf("Reached step %lu", steps);
 
             exit = (maxSteps != 0) && (steps >= maxSteps);
         }
